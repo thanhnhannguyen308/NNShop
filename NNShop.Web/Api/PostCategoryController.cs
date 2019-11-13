@@ -1,4 +1,7 @@
-﻿using System;
+﻿using NNShop.Model.Models;
+using NNShop.Service;
+using NNShop.Web.Infrastructure.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,33 +10,45 @@ using System.Web.Http;
 
 namespace NNShop.Web.Api
 {
-    public class PostCategoryController : ApiController
+    [RoutePrefix("api/postcategory")]
+    public class PostCategoryController : ApiControllerBase
     {
-        // GET api/<controller>
-        public IEnumerable<string> Get()
+        private readonly IPostCategoryService _postCategoryService;
+
+        public PostCategoryController(IErrorService errorService, IPostCategoryService postCategoryService) :
+            base(errorService)
         {
-            return new string[] { "value1", "value2" };
+            this._postCategoryService = postCategoryService;
         }
 
-        // GET api/<controller>/5
-        public string Get(int id)
+        public HttpResponseMessage Create(HttpRequestMessage request, PostCategory postcategory)
         {
-            return "value";
+            return CreateHttpResponse(request, () =>
+            {
+                HttpResponseMessage response = null;
+                if (ModelState.IsValid)
+                {
+                    request.CreateErrorResponse(HttpStatusCode.BadRequest, ModelState);
+                }
+                else
+                {
+                    var category = _postCategoryService.Add(postcategory);
+                    _postCategoryService.Save();
+                    response = request.CreateResponse(HttpStatusCode.OK, category);
+                }
+                return response;
+            });
         }
 
-        // POST api/<controller>
-        public void Post([FromBody]string value)
+        [Route("getall")]
+        public HttpResponseMessage Get(HttpRequestMessage request)
         {
-        }
-
-        // PUT api/<controller>/5
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE api/<controller>/5
-        public void Delete(int id)
-        {
+            return CreateHttpResponse(request, () =>
+            {
+                var lstCategory = _postCategoryService.GetAll();
+                HttpResponseMessage response = request.CreateResponse(HttpStatusCode.OK, lstCategory);
+                return response;
+            });
         }
     }
 }
